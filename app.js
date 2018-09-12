@@ -3,6 +3,8 @@ var TAG = 'app.js';
 var express = require('express');
 var app = express();
 var path = require('path');
+var routes = require('./views/index.js');
+
 
 var bodyParser = require('body-parser');
 app.use(bodyParser.json({
@@ -23,6 +25,8 @@ app.use(function (req, res, next) {
 });
 
 var api = require('./api.js');
+
+app.use('/', routes);
 app.use('/api', api);
 
 

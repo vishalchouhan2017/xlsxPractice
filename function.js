@@ -18,11 +18,10 @@ exports.uploadExcel = function(req, callback) {
         var data = [];
         for(i=0;i<xlData.length;i++){
         data.push({
-        "name":xlData[i].name,
-        "place":xlData[i].place,
-        "money":xlData[i].money})
+        "name":xlData[i].Num,
+        "place":xlData[i].Operator,
+        "money":xlData[i].Region})
         }
-        console.log((data));
 
         var queryObj = {
             fileName : fileName
@@ -45,8 +44,8 @@ exports.uploadExcel = function(req, callback) {
                callback(true,resJson);
              }
              else {
-                fs.unlinkSync(path);              
-                
+                fs.unlinkSync(path);
+
                 resJson = {
                    "http_code": 200,
                    "message": "Employee details uploaded successfully.",
@@ -54,8 +53,9 @@ exports.uploadExcel = function(req, callback) {
                  };
                  callback(false,resJson);
                 }
-           });				
+           });
      } catch (e) {
+       console.log(e);
         resJson = {
             "http_code": "500",
             "message": "Error while uploading data"
@@ -92,7 +92,7 @@ exports.downloadData = function(req, callback) {
                   };
                   callback(false,resJson);
              }
-           });  
+           });
     } catch (e) {
         resJson = {
             "http_code": "500",
@@ -123,7 +123,7 @@ exports.deleteData = function(req, callback) {
                   };
                   callback(false,resJson);
              }
-           });    
+           });
     } catch (e) {
         resJson = {
             "http_code": "500",
