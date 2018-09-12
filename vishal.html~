@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+   <body>
+      <div ng-app="myApp" ng-controller="myCtrl">
+         <label class="receipt-aat"> Attachment : </label>
+         <label class="custom-file-input" style="float:left;width: 20%;">
+         <input type="file" file-model="Additional" name="supportDoc" accept="png, jpg, jpeg, doc, docx, pdf, xls, xlsx, xlsm" ng-accept="png, jpg, jpeg, doc, docx, pdf, xls, xlsx, xlsm" onclick="this.value=null" /> </label>
+         <button type="button" class="downloadButton"  ng-click="submitFile(Additional, 'advanceInvoiceFile')" >Upload</button>			   
+         <p ng-if="fileUploadSuccess == true">File Uploaded successfully</p>
+         <table>
+            <tr>
+               <th>Name</th>
+               <th>Place</th>
+               <th>Salary</th>
+               <th><a ng-click="deleteEmployee(employee)">Delete</a></th>
+            </tr>
+            <tr ng-repeat="employee in employees">
+               <td>{{employee.name}}</td>
+               <td>{{employee.place}}</td>
+               <td>{{employee.money}}</td>
+               <td></td>
+            </tr>
+         </table>
+      </div>
+      <script>
+         var app = angular.module("myApp", []);
+         app.controller("myCtrl", function($scope, $http) {
+             $scope.fileUploadSuccess = false;
+             
+         	$scope.submitFile = function(file){
+         var formData = new FormData();
+         	formData.append("file", file)
+         	$http({
+                     method: 'POST',
+                     url: 'http://localhost:8083/api/uploadExcel',
+                     withCredentials: true,
+                     headers: {
+                         'Content-Type': undefined
+                     },
+                     
+                     
+                     data: formData
+                        
+                         
+                         
+                    
+                 }).then(function(data) {
+         		
+                     $scope.fileUploadSuccess = true;
+                     downloadDetails(data.data.fileName)
+         
+                     
+                 }).catch(function(data) {
+         
+                   downloadDetails(data.data.fileName)
+                 });
+         	
+         	}
+         $scope.deleteEmployee = function(data){
+         	$http.post("http://localhost:8083/api/deleteData",{"fileName":$scope.fileName}).then(function(response){
+         		downloadDetails($scope.fileName)
+         			
+         		}).catch(function(response){
+         		
+         
+         		
+         		})
+         }
+         	function downloadDetails(fileName){
+         	$http.post("http://localhost:8083/api/downloadData",{"fileName":fileName}).then(function(response){
+         		$scope.employees = response.data.message.data;
+         		$scope.fileName = response.data.message.fileName
+         		}).catch(function(response){
+         		$scope.employees = [];
+         
+         		
+         		})
+         	}
+         });
+         
+         
+         app.directive('fileModel', ['$parse', '$rootScope', function($parse, $rootScope) {
+             return {
+                 restrict: 'A',
+                 link: function(scope, element, attrs, rootScope) {
+                     var model = $parse(attrs.fileModel);
+                     var fileMax = attrs.max;
+                     var isMultiple = attrs.multiple;
+                     var modelSetter = model.assign;
+                     var fileTypes = attrs.accept;
+                     var fileType = attrs.accept.toUpperCase();
+                     var values = [];
+                     if (!fileMax)
+                         fileMax = 5;
+                     element.bind('change', function() {
+                         if (!isMultiple) {
+                             values = [];
+                         } else {
+                             if (attrs.addedfiles) {
+                                 var addedfiles = JSON.parse(attrs.addedfiles);
+                                 var tempvalues = values;
+                                 values = [];
+                                 if (attrs.existingfilelength == "0") {
+                                     tempvalues = [];
+                                 }
+                                 var addedfilesnames = addedfiles.map(function(d) {
+                                     return d.displayName;
+                                 });
+                                 for (i = 0; i < tempvalues.length; i++) {
+                                     if (addedfilesnames.indexOf(tempvalues[i].name) == -1) {
+                                         values.push(tempvalues[i]);
+                                     }
+                                 }
+                             }
+                         }
+         
+                         var fileLength = element[0].files.length + values.length;
+                         if (isMultiple == true) {
+                             if (addedfilesnames != undefined)
+                                 var fileLength = element[0].files.length + values.length + addedfilesnames.length;
+                         }
+                         var currentFileType = element[0].files[0].name.substr(element[0].files[0].name.lastIndexOf(".") + 1).toUpperCase();
+                         scope.$apply(function() {
+                             scope.fileTypeError = "";
+                         });
+                         if (fileLength <= Number(fileMax)) {
+                             angular.forEach(element[0].files, function(item) {
+                                 if (fileType.indexOf(currentFileType) > -1) {
+                                     if (element[0].files[0].size < 5242880) {
+                                         values.push(item);
+                                     } else {
+                                         scope.$apply(function() {
+                                             scope.fileTypeError = "You are allowed to upload upto 5MB";
+                                         });
+                                     }
+                                 } else {
+                                     scope.$apply(function() {
+                                         scope.fileTypeError = "You are allowed to upload " + fileTypes;
+                                     });
+                                 }
+                             });
+                             scope.$apply(function() {
+                                 if (isMultiple) {
+                                     modelSetter(scope, values);
+                                 } else {
+                                     modelSetter(scope, values[0]);
+                                 }
+                             });
+                         } else {
+                             scope.$apply(function() {
+                                 scope.fileTypeError = "You can upload upto " + fileMax + " documents";
+                             });
+                         }
+                     });
+                 }
+             };
+         }]);
+      </script>
+   </body>
+</html>
